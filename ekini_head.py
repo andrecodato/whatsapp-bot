@@ -1,6 +1,6 @@
 import re
 
-from botBeta import Wppbot
+from ekini_skelet import Wppbot
 
 # set bot name
 bot = Wppbot('ekini')
