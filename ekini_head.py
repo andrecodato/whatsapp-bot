@@ -1,23 +1,26 @@
 import re
 
-from ekini_skelet import wppbot
+from botBeta import Wppbot
 
-bot = wppbot('ekini')
+# set bot name
+bot = Wppbot('ekini')
 
-bot.treina('treino')
+# set contact/group name
+bot.start('TOME TERES')
 
-bot.start('Pega na main_a e balanca')
+# set the welcome message (will be removed)
+bot.welcome(
+    ['Salve sou o ekini beta carai, meu arquiteto ta testando uns bagulho novo nessa porra',
+     'ao contrário do meu parceiro, o eki, eu sou chamado pelo beki (Beta Ekini)',
+     'chama eu ae nesse carai!'])
 
-bot.saudacao(['Salve mestre, sou o Ekini, eu vim pra falar que a Dominika nasceu pelada',
-              'Use "eki" pra falar comigo!'])
-
-ultimo_texto = ''
+last_text = ''
 
 while True:
-    texto = bot.escuta()
+    earing = bot.ear()
 
-    if texto != ultimo_texto and re.match(r'^eki', texto):
-        ultimo_texto = texto
-        texto = texto.replace('eki', '')
-        texto = texto.lower()
-        bot.responde(texto)
+    if earing != last_text and re.match(r'beki\w*', earing):
+        last_text = earing
+        earing = earing.replace('beki', '')
+        earing = earing.lower()
+        bot.reply(earing)

@@ -1,84 +1,116 @@
 import os
 import time
-import re
 
-from chatterbot.trainers import ListTrainer
+from chatterbot.trainers import ChatterBotCorpusTrainer
 from chatterbot import ChatBot
 from selenium import webdriver
 
 
-class wppbot:
-    # app root path
+class Wppbot:
+    # root path
     dir_path = os.getcwd()
 
-    def __init__(self, nome_bot):
-        self.bot = ChatBot(nome_bot)
-        self.trainer = ListTrainer(self.bot)
+    # def init
+    def __init__(self, bot_name):
+        # bot definition
+        self.bot = ChatBot(bot_name)
+
+        # trainer definition
+        self.trainer = ChatterBotCorpusTrainer(self.bot)
+
         # chromedriver path
         self.chrome = self.dir_path + '/driver/chromedriver'
 
+        # acess Chrome options then create/acess
+        # a new user on chrome for the bot
         self.options = webdriver.ChromeOptions()
-        self.options.add_argument(r"user-data-dir=" +
-                                  self.dir_path + "/profile/wpp")
+        self.options.add_argument(
+            r'user-data-dir=' + self.dir_path + '/profile/wpp_ekini')
 
-        self.driver = webdriver.Chrome(self.chrome,
-                                       chrome_options=self.options)
+        # init chromedriver
+        self.driver = webdriver.Chrome(
+            self.chrome, chrome_options=self.options)
 
-    def start(self, nome_contato):
-        self.driver.get('https://web.whatsapp.com')
+    # function that acees the website then enter in pre-selected group
+    # (will be removed later)
+    def start(self, contact_group):
+        # acess web.whatsapp then
+        # wait '15' seconds to site load
+        self.driver.get('https://web.whatsapp.com/')
         self.driver.implicitly_wait(15)
 
-        self.caixa_de_pesquisa = self.driver.find_element_by_class_name(
-            '_2zCfw')
-        self.caixa_de_pesquisa.send_keys(nome_contato)
+        # select the site search box,
+        # write the contact/group name then
+        # wait 2 seconds for the next step
+        # (this function will be removed and replaced by detect calls in all chats)
+        self.contact_group_name_box = self.driver.find_element_by_xpath(
+            "//INPUT[@type='text']")
+        self.contact_group_name_box.send_keys(contact_group)
         time.sleep(2)
 
-        self.contato = self.driver.find_element_by_xpath("//SPAN[@class='matched-text'][text()='{}']"
-                                                         .format(nome_contato))
+        # select the result of search
+        # then click and wait 2 seconds
+        self.contato = self.driver.find_element_by_xpath(
+            "//SPAN[@class='matched-text'][text()='{}']".format(contact_group))
         self.contato.click()
         time.sleep(2)
 
-    def saudacao(self, frase_inicial):
-        self.caixa_de_mensagem = self.driver.find_element_by_class_name(
+    # function that run the MOTD message
+    # (maybe will be removed)
+    def welcome(self, welcome_msg):
+        # select the message box
+        self.msg_box = self.driver.find_element_by_class_name(
             '_3u328')
 
-        if type(frase_inicial) == list:
-            for frase in frase_inicial:
-                self.caixa_de_mensagem.send_keys(frase)
+        if type(welcome_msg) == list:
+            for sentence in welcome_msg:
+                # write the sentence(s) in message box then
+                # wait 1 second for the send button appears
+                self.msg_box.send_keys(sentence)
                 time.sleep(1)
 
-                self.botao_enviar = self.driver.find_element_by_xpath(
+                # select the send button,
+                # click on it and wait 1 second
+                self.send_btn = self.driver.find_element_by_xpath(
                     "//SPAN[@data-icon='send']")
-                self.botao_enviar.click()
+                self.send_btn.click()
                 time.sleep(1)
         else:
-            return False
+            self.msg_box.send_keys(welcome_msg)
+            time.sleep(1)
 
-    def escuta(self):
-        post = self.driver.find_elements_by_class_name('FTBzM')
-        ultimo = len(post) - 1
-        texto = post[ultimo].find_element_by_css_selector(
+            self.send_btn.click()
+            time.sleep(1)
+
+    # function that hear all messages
+    def ear(self):
+        # find all the message boxes,
+        # set the last one, then
+        # select the text on it
+        # and, finaly, return the last text
+        chat_balloon = self.driver.find_elements_by_class_name('FTBzM')
+        last_chat_balloon = len(chat_balloon) - 1
+        chat_balloon_text = chat_balloon[last_chat_balloon].find_element_by_css_selector(
             'span.selectable-text').text
+        return chat_balloon_text
 
-        return texto
+    # function that will train the bot
+    def training(self):
+        self.trainer.train("chatterbot.corpous.portuguese")
 
-    def responde(self, texto):
-        response = self.bot.get_response(texto)
+    # function that will answer a call
+    def reply(self, msg_text):
+        # takes the text give by main.py then convert to string
+        response = self.bot.get_response(msg_text)
         response = str(response)
 
-        self.caixa_de_mensagem = self.driver.find_element_by_class_name(
+        self.msg_box = self.driver.find_element_by_class_name(
             '_3u328')
-        self.caixa_de_mensagem.send_keys(response)
+        self.msg_box.send_keys(response)
         time.sleep(1)
 
-        self.botao_enviar = self.driver.find_element_by_xpath(
+        self.send_btn = self.driver.find_element_by_xpath(
             "//SPAN[@data-icon='send']")
-        self.botao_enviar.click()
+        self.send_btn.click()
 
-        conv = ['Salve mestre, eu sou burro, to aprendendo as coisa']
-        self.trainer.train(conv)
-
-    def treina(self, nome_pasta):
-        for treino in os.listdir(nome_pasta):
-            conversas = open(nome_pasta + '/' + treino, 'r').readlines()
-            self.bot.train(conversas)
+        self.training()
